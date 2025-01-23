@@ -73,6 +73,8 @@
         "future": "cpp",
         "variant": "cpp",
         "*.ipp": "cpp",
-        "any": "cpp"
+        "any": "cpp",
+        "*.txx": "cpp",
+        "regex": "cpp"
     }
 }

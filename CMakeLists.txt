@@ -70,7 +70,7 @@ target_include_directories(${PROJECT_NAME}
   PUBLIC
   $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include/${PROJECT_NAME}>
-  $<BUILD_INTERFACE:${CMAKE_BINARY_DIR}/>
+  #$<BUILD_INTERFACE:${CMAKE_BINARY_DIR}/>
   ${Boost_INCLUDE_DIRS}
   ${Eigen3_INCLUDE_DIRS}
   ${SpaceVecAlg_INCLUDE_DIRS} 
@@ -78,6 +78,7 @@ target_include_directories(${PROJECT_NAME}
 )
 target_link_libraries(${PROJECT_NAME} PUBLIC
   Eigen3::Eigen
+  ${PROJECT_NAME}_parameters
   "${PROJECT_NAME}_msgs__rosidl_typesupport_cpp"
   ${Boost_LIBRARIES}
   ${tinyxml2_LIBRARIES}

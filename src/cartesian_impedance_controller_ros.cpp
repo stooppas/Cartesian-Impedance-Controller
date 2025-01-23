@@ -78,6 +78,7 @@ void CartesianImpedanceControllerRos::updateParams()
   CartesianImpedanceController::setDampingFactors(
   params_.damping.translation.x, params_.damping.translation.y, params_.damping.translation.z, params_.damping.rotation.x, params_.damping.rotation.y, params_.damping.rotation.z, params_.damping.nullspace);
 
+  /*
   Eigen::Vector6d F{Eigen::Vector6d::Zero()};
 
   F << params_.wrench.f_x, params_.wrench.f_y, params_.wrench.f_z, params_.wrench.tau_x, params_.wrench.tau_y, params_.wrench.tau_z;
@@ -86,8 +87,10 @@ void CartesianImpedanceControllerRos::updateParams()
     RCLCPP_ERROR(get_node()->get_logger(),"Could not transform wrench. Not applying it.");
     return;
   }
+  
 
   this->applyWrench(F);
+  */ 
 }
 
 controller_interface::CallbackReturn CartesianImpedanceControllerRos::on_init()
@@ -112,7 +115,8 @@ controller_interface::CallbackReturn CartesianImpedanceControllerRos::on_init()
     RCLCPP_WARN(get_node()->get_logger(), "'joints' parameter is empty.");
   }
 
-  update_frequency_ = get_update_rate();
+  //update_frequency_ = get_node()->get_parameter("update_frequency").as_int(); //get_update_rate();
+  RCLCPP_INFO(get_node()->get_logger(),"Update Frequency: %i",update_frequency_);
 
   tf_buffer_ = std::make_unique<tf2_ros::Buffer>(this->get_node()->get_clock());
   tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
@@ -157,7 +161,7 @@ controller_interface::CallbackReturn CartesianImpedanceControllerRos::on_init()
   CartesianImpedanceControllerRos::command_interface_configuration() const
   {
     controller_interface::InterfaceConfiguration conf;
-    conf.type = controller_interface::interface_configuration_type::ALL;
+    conf.type = controller_interface::interface_configuration_type::INDIVIDUAL;
     if (dof_ == 0)
     {
       fprintf(
@@ -179,7 +183,7 @@ controller_interface::CallbackReturn CartesianImpedanceControllerRos::on_init()
 CartesianImpedanceControllerRos::state_interface_configuration() const
 {
   controller_interface::InterfaceConfiguration conf;
-  conf.type = controller_interface::interface_configuration_type::ALL;
+  conf.type = controller_interface::interface_configuration_type::INDIVIDUAL;
   conf.names.reserve(dof_ * 3);
   for (const auto & joint_name : params_.joints)
   { 
@@ -374,6 +378,8 @@ controller_interface::CallbackReturn CartesianImpedanceControllerRos::on_error(
 
     return true;
   }
+
+  uint32_t skipCtr = 0;
   
   controller_interface::return_type CartesianImpedanceControllerRos::update(const rclcpp::Time & /*time*/, const rclcpp::Duration &/*period*/)
   {
@@ -387,7 +393,7 @@ controller_interface::CallbackReturn CartesianImpedanceControllerRos::on_error(
       params_ = param_listener_->get_params();
       updateParams();
     }
-
+    /*
     // don't update goal after we sampled the trajectory to avoid any racecondition
     const auto active_goal = *rt_active_goal_.readFromRT();
 
@@ -398,16 +404,25 @@ controller_interface::CallbackReturn CartesianImpedanceControllerRos::on_error(
       sort_to_local_joint_order(*new_external_msg);
       trajStart(*new_external_msg);
     }
+    */
 
 
     if (*(rt_has_pending_goal_.readFromRT()))
     {
       trajUpdate();
     }
-    this->updateState();
+    if(skipCtr%5 == 0)
+    {
+      this->updateState();
+    }
 
     // Apply control law in base library
-    this->calculateCommandedTorques();
+    if(skipCtr%5 == 0)
+    {
+      this->calculateCommandedTorques();
+    }
+
+    skipCtr++;
 
     for (size_t index = 0; index < dof_; ++index)
     {
@@ -543,6 +558,7 @@ controller_interface::CallbackReturn CartesianImpedanceControllerRos::on_error(
                                                saturateValue(nullspace, ns_min_, ns_max_), auto_damping);
   }
 
+  /*
   void CartesianImpedanceControllerRos::wrenchCommandCb(const geometry_msgs::msg::WrenchStamped::SharedPtr &msg)
   {
     Eigen::Matrix<double, 6, 1> F;
@@ -567,7 +583,8 @@ controller_interface::CallbackReturn CartesianImpedanceControllerRos::on_error(
     }
     this->applyWrench(F);
   }
-
+  */
+ /*
   bool CartesianImpedanceControllerRos::transformWrench(Eigen::Matrix<double, 6, 1> *cartesian_wrench,
                                                         const std::string &from_frame, const std::string &to_frame) const
   {
@@ -591,6 +608,7 @@ controller_interface::CallbackReturn CartesianImpedanceControllerRos::on_error(
       return false;
     }
   }
+  */
 
   void CartesianImpedanceControllerRos::publishMsgsAndTf()
   {
@@ -785,10 +803,10 @@ controller_interface::CallbackReturn CartesianImpedanceControllerRos::on_error(
     }
 
     // reject effort entries
-    if (!points[i].effort.empty() || !points[i].velocities.empty() ||  !points[i].accelerations.empty())
+    if (!points[i].effort.empty())
     {
       RCLCPP_ERROR(
-        get_node()->get_logger(), "Trajectories with effort, velocity or acceleration fields are currently not supported.");
+        get_node()->get_logger(), "Trajectories with effort fields are currently not supported.");
       return false;
     }
   }
@@ -852,6 +870,7 @@ controller_interface::CallbackReturn CartesianImpedanceControllerRos::on_error(
         std::make_shared<trajectory_msgs::msg::JointTrajectory>(goal_handle->get_goal()->trajectory);
 
       traj_msg_external_point_ptr_.writeFromNonRT(traj_msg);
+      trajStart(traj_msg);
       rt_is_holding_.writeFromNonRT(false);
     }
 

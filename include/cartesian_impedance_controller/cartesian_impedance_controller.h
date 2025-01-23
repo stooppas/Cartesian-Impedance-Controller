@@ -231,7 +231,7 @@ namespace cartesian_impedance_controller
 
     Eigen::VectorXd tau_c_; //!< Last commanded torques
 
-    double update_frequency_{1000};               //!< Update frequency in Hz
+    uint32_t update_frequency_{1000};               //!< Update frequency in Hz
     double filter_params_nullspace_config_{1.0};  //!< Nullspace filtering
     double filter_params_stiffness_{1.0};         //!< Cartesian stiffness filtering
     double filter_params_pose_{1.0};              //!< Reference pose filtering
