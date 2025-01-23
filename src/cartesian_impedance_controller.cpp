@@ -72,7 +72,7 @@ namespace cartesian_impedance_controller
    */
   inline void saturateTorqueRate(const Eigen::VectorXd &tau_d_calculated, Eigen::VectorXd *tau_d_saturated, double delta_tau_max)
   {
-    for (size_t i = 0; i < tau_d_calculated.size(); i++)
+    for (uint32_t i = 0; i < tau_d_calculated.size(); i++)
     {
       const double difference = tau_d_calculated[i] - tau_d_saturated->operator()(i);
       tau_d_saturated->operator()(i) += saturateValue(difference, -delta_tau_max, delta_tau_max);
@@ -101,12 +101,8 @@ namespace cartesian_impedance_controller
     this->q_d_nullspace_ = this->q_d_nullspace_target_;
   }
 
-  void CartesianImpedanceController::setNumberOfJoints(size_t n_joints)
+  void CartesianImpedanceController::setNumberOfJoints(uint32_t n_joints)
   {
-    if (n_joints < 0)
-    {
-      throw std::invalid_argument("Number of joints must be positive");
-    }
     this->n_joints_ = n_joints;
     this->q_ = Eigen::VectorXd::Zero(this->n_joints_);
     this->dq_ = Eigen::VectorXd::Zero(this->n_joints_);
@@ -165,7 +161,7 @@ namespace cartesian_impedance_controller
   {
     Eigen::Matrix<double, 7, 1> damping_new;
     damping_new << d_x, d_y, d_z, d_a, d_b, d_c, d_n;
-    for (size_t i = 0; i < damping_new.size(); i++)
+    for (uint32_t i = 0; i < damping_new.size(); i++)
     {
       if (damping_new(i) < 0)
       {

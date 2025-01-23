@@ -29,7 +29,7 @@ namespace cartesian_impedance_controller
     * 
     * \param[in] n_joints Number of joints
     */
-    void setNumberOfJoints(size_t n_joints);
+    void setNumberOfJoints(uint32_t n_joints);
 
     /*! \brief Set the desired diagonal stiffnessess + nullspace stiffness
     * 
@@ -194,7 +194,7 @@ namespace cartesian_impedance_controller
     Eigen::Matrix<double, 6, 1> getPoseError() const;
 
   protected:
-    size_t n_joints_{7}; //!< Number of joints to control
+    uint32_t n_joints_{7}; //!< Number of joints to control
 
     Eigen::Matrix<double, 6, 6> cartesian_stiffness_{Eigen::Matrix<double, 6, 6>::Identity()};  //!< Cartesian stiffness matrix
     Eigen::Matrix<double, 6, 6> cartesian_damping_{Eigen::Matrix<double, 6, 6>::Identity()};    //!< Cartesian damping matrix

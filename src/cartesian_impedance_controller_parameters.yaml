@@ -1,0 +1,237 @@
+cartesian_impedance_controller:
+  joints: {
+    type: string_array,
+    default_value: [],
+    description: "Joint names to control and listen to",
+    read_only: true,
+    validation: {
+      unique<>: null,
+    }
+  }
+  end_effector: {
+    type: string,
+    description: "Frame of the End-Effector for cartesian impedance control"
+  }
+  wrench_ee_frame: {
+    type: string,
+    description: "Frame of the End-Effector to apply a wrench to"
+  }
+  delta_tau_max: {
+    type: double,
+    default_value: 1,
+    description: "Enable running Trajectories"
+  }
+  delta_tau_max: {
+    type: double,
+    default_value: 1.0,
+    description: "Enable running Trajectories",
+    validation: {
+      gt<>: 0
+    }
+  }
+  filtering: {
+    nullspace_config: {
+      type: double,
+      default_value: 0.1,
+    },
+    stiffness: {
+      type: double,
+      default_value: 0.1,
+    },
+    pose: {
+      type: double,
+      default_value: 0.1,
+    },
+    wrench: {
+      type: double,
+      default_value: 0.1,
+    }
+  }
+  verbosity: {
+    verbose_print: {
+      type: bool,
+      default_value: false,
+    },
+    state_msgs: {
+      type: bool,
+      default_value: false,
+    },
+    tf_frames: {
+      type: bool,
+      default_value: false,
+    }
+  }
+  damping: {
+    translation: {
+      x: {
+        type: double,
+        default_value: 1,
+        description: "translational damping in x direction",
+        validation: {
+          bounds<>: [0, 1]
+        }
+      },
+      y: {
+        type: double,
+        default_value: 1,
+        description: "translational damping in y direction",
+        validation: {
+          bounds<>: [0, 1]
+        }
+      },
+      z: {
+        type: double,
+        default_value: 1,
+        description: "translational damping in z direction",
+        validation: {
+          bounds<>: [0, 1]
+        }
+      },
+    },
+    rotation: {
+      x: {
+        type: double,
+        default_value: 1,
+        description: "rotational damping in x direction",
+        validation: {
+          bounds<>: [0, 1]
+        }
+      },
+      y: {
+        type: double,
+        default_value: 1,
+        description: "rotational damping in y direction",
+        validation: {
+          bounds<>: [0, 1]
+        }
+      },
+      z: {
+        type: double,
+        default_value: 1,
+        description: "rotational damping in z direction",
+        validation: {
+          bounds<>: [0, 1]
+        }
+      },
+    },
+    nullspace: {
+      type: double,
+      default_value: 1,
+      description: "nullspace damping",
+      validation: {
+        bounds<>: [0, 1]
+      }
+    }
+  }
+  stiffness: {
+    translation: {
+      x: {
+        type: double,
+        default_value: 200,
+        description: "translational stiffness in x direction",
+        validation: {
+          bounds<>: [0, 2000]
+        }
+      },
+      y: {
+        type: double,
+        default_value: 200,
+        description: "translational stiffness in y direction",
+        validation: {
+          bounds<>: [0, 2000]
+        }
+      },
+      z: {
+        type: double,
+        default_value: 200,
+        description: "translational stiffness in z direction",
+        validation: {
+          bounds<>: [0, 2000]
+        }
+      },
+    },
+    rotation: {
+      x: {
+        type: double,
+        default_value: 20,
+        description: "rotational stiffness in x direction",
+        validation: {
+          bounds<>: [0, 300]
+        }
+      },
+      y: {
+        type: double,
+        default_value: 20,
+        description: "rotational stiffness in y direction",
+        validation: {
+          bounds<>: [0, 300]
+        }
+      },
+      z: {
+        type: double,
+        default_value: 20,
+        description: "rotational stiffness in z direction",
+        validation: {
+          bounds<>: [0, 300]
+        }
+      },
+    },
+    nullspace: {
+      type: double,
+      default_value: 0,
+      description: "nullspace stiffness",
+      validation: {
+        bounds<>: [0, 50]
+      }
+    }
+  }
+  wrench: {
+    f_x: {
+      type: double,
+      default_value: 0,
+      description: "Apply a force in the x-direction",
+      validation: {
+        bounds<>: [-30, 30]
+      }
+    },
+    f_y: {
+      type: double,
+      default_value: 0,
+      description: "Apply a force in the y-direction",
+      validation: {
+        bounds<>: [-30, 30]
+      }
+    },
+    f_z: {
+      type: double,
+      default_value: 0,
+      description: "Apply a force in the z-direction",
+      validation: {
+        bounds<>: [-30, 30]
+      }
+    },
+    tau_x: {
+      type: double,
+      default_value: 0,
+      description: "Apply a torque in the x-direction",
+      validation: {
+        bounds<>: [-10, 10]
+      }
+    },
+    tau_y: {
+      type: double,
+      default_value: 0,
+      description: "Apply a torque in the y-direction",
+      validation: {
+        bounds<>: [-10, 10]
+      }
+    },
+    tau_z: {
+      type: double,
+      default_value: 0,
+      description: "Apply a torque in the z-direction",
+      validation: {
+        bounds<>: [-10, 10]
+      }
+    },
+  }
