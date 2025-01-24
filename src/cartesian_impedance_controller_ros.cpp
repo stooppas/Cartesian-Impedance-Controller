@@ -115,7 +115,7 @@ controller_interface::CallbackReturn CartesianImpedanceControllerRos::on_init()
     RCLCPP_WARN(get_node()->get_logger(), "'joints' parameter is empty.");
   }
 
-  //update_frequency_ = get_node()->get_parameter("update_frequency").as_int(); //get_update_rate();
+  update_frequency_ = get_update_rate();
   RCLCPP_INFO(get_node()->get_logger(),"Update Frequency: %i",update_frequency_);
 
   tf_buffer_ = std::make_unique<tf2_ros::Buffer>(this->get_node()->get_clock());
@@ -136,7 +136,7 @@ controller_interface::CallbackReturn CartesianImpedanceControllerRos::on_init()
   {
     return CallbackReturn::ERROR;
   }
-  this->root_frame_ = this->rbdyn_wrapper_.root_link();
+  this->root_frame_ = this->pinocchio_wrapper_.root_link();
 
   updateParams();
 
@@ -343,7 +343,7 @@ controller_interface::CallbackReturn CartesianImpedanceControllerRos::on_error(
   {
     try
     {
-      this->pinocchio_wrapper_.init_pinocchio(urdf_string,params_.end_effector, params_.joints);
+      this->pinocchio_wrapper_.init_pinocchio(urdf_string,params_.end_effector);
       this->rbdyn_wrapper_.init_rbdyn(urdf_string, params_.end_effector);
     }
     catch (std::runtime_error& e)
@@ -351,15 +351,15 @@ controller_interface::CallbackReturn CartesianImpedanceControllerRos::on_error(
       RCLCPP_ERROR(get_node()->get_logger(),"Error when intializing RBDyn: %s", e.what());
       return false;
     }
-    RCLCPP_INFO_STREAM(get_node()->get_logger(),"Number of joints found in urdf: " << this->rbdyn_wrapper_.n_joints());
-    if (this->rbdyn_wrapper_.n_joints() < this->dof_)
+    RCLCPP_INFO_STREAM(get_node()->get_logger(),"Number of joints found in urdf: " << this->pinocchio_wrapper_.n_joints());
+    if (this->pinocchio_wrapper_.n_joints() < this->dof_)
     {
-      RCLCPP_ERROR(get_node()->get_logger(),"Number of joints in the URDF is smaller than supplied number of joints. %i < %i", this->rbdyn_wrapper_.n_joints(), this->dof_);
+      RCLCPP_ERROR(get_node()->get_logger(),"Number of joints in the URDF is smaller than supplied number of joints. %i < %i", this->pinocchio_wrapper_.n_joints(), this->dof_);
       return false;
     }
-    else if (this->rbdyn_wrapper_.n_joints() > this->dof_)
+    else if (this->pinocchio_wrapper_.n_joints() > this->dof_)
     {
-      RCLCPP_WARN(get_node()->get_logger(),"Number of joints in the URDF is greater than supplied number of joints: %i > %i. Assuming that the actuated joints come first.", this->rbdyn_wrapper_.n_joints(), this->dof_);
+      RCLCPP_WARN(get_node()->get_logger(),"Number of joints in the URDF is greater than supplied number of joints: %i > %i. Assuming that the actuated joints come first.", this->pinocchio_wrapper_.n_joints(), this->dof_);
     }
     return true;
   }
@@ -379,8 +379,6 @@ controller_interface::CallbackReturn CartesianImpedanceControllerRos::on_error(
 
     return true;
   }
-
-  uint32_t skipCtr = 0;
   
   controller_interface::return_type CartesianImpedanceControllerRos::update(const rclcpp::Time & /*time*/, const rclcpp::Duration &/*period*/)
   {
@@ -412,18 +410,12 @@ controller_interface::CallbackReturn CartesianImpedanceControllerRos::on_error(
     {
       trajUpdate();
     }
-    if(skipCtr%5 == 0)
-    {
-      this->updateState();
-    }
+
+    this->updateState();
 
     // Apply control law in base library
-    if(skipCtr%5 == 0)
-    {
-      this->calculateCommandedTorques();
-    }
 
-    skipCtr++;
+    this->calculateCommandedTorques();
 
     for (size_t index = 0; index < dof_; ++index)
     {
@@ -438,43 +430,41 @@ controller_interface::CallbackReturn CartesianImpedanceControllerRos::on_error(
   bool CartesianImpedanceControllerRos::getFk(const Eigen::VectorXd &q, Eigen::Vector3d *position,
                                               Eigen::Quaterniond *orientation) const
   {
-    rbdyn_wrapper::EefState ee_state;
+    pinocchio_wrapper::EefState ee_state;
     // If the URDF contains more joints than there are controlled, only the state of the controlled ones are known
-    if (this->rbdyn_wrapper_.n_joints() != this->dof_)
+    if (this->pinocchio_wrapper_.n_joints() != this->dof_)
     {
-      Eigen::VectorXd q_rb = Eigen::VectorXd::Zero(this->rbdyn_wrapper_.n_joints());
+      Eigen::VectorXd q_rb = Eigen::VectorXd::Zero(this->pinocchio_wrapper_.n_joints());
       q_rb.head(q.size()) = q;
-      ee_state = this->rbdyn_wrapper_.perform_fk(q_rb);
+      ee_state = this->pinocchio_wrapper_.perform_fk(q_rb);
+
     }
     else
     {
-      ee_state = this->rbdyn_wrapper_.perform_fk(q);
+      ee_state = this->pinocchio_wrapper_.perform_fk(q);
     }
     *position = ee_state.translation;
     *orientation = ee_state.orientation;
-    return true;
+    return true;  
   }
 
   bool CartesianImpedanceControllerRos::getJacobian(const Eigen::VectorXd &q, const Eigen::VectorXd &dq,
                                                     Eigen::MatrixXd *jacobian)
   {
     // If the URDF contains more joints than there are controlled, only the state of the controlled ones are known
-    if (this->rbdyn_wrapper_.n_joints() != this->dof_)
+    if (this->pinocchio_wrapper_.n_joints() != this->dof_)
     {
-      Eigen::VectorXd q_rb = Eigen::VectorXd::Zero(this->rbdyn_wrapper_.n_joints());
+      Eigen::VectorXd q_rb = Eigen::VectorXd::Zero(this->pinocchio_wrapper_.n_joints());
       q_rb.head(q.size()) = q;
-      Eigen::VectorXd dq_rb = Eigen::VectorXd::Zero(this->rbdyn_wrapper_.n_joints());
+      Eigen::VectorXd dq_rb = Eigen::VectorXd::Zero(this->pinocchio_wrapper_.n_joints());
       dq_rb.head(dq.size()) = dq;
-      *jacobian = this->rbdyn_wrapper_.jacobian(q_rb, dq_rb);
+      *jacobian = this->pinocchio_wrapper_.jacobian(q_rb, dq_rb);
     }
     else
     {
-      *jacobian = this->rbdyn_wrapper_.jacobian(q, dq);
-      std::cout << *jacobian << std::endl;
       *jacobian = this->pinocchio_wrapper_.jacobian(q, dq);
-      std::cout << *jacobian << std::endl;
     }
-    *jacobian = jacobian_perm_ * *jacobian;
+
     return true;
   }
 

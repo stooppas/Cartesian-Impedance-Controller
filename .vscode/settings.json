@@ -75,6 +75,10 @@
         "*.ipp": "cpp",
         "any": "cpp",
         "*.txx": "cpp",
-        "regex": "cpp"
+        "regex": "cpp",
+        "csignal": "cpp",
+        "strstream": "cpp",
+        "codecvt": "cpp",
+        "cfenv": "cpp"
     }
 }

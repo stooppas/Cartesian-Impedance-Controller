@@ -1,12 +1,12 @@
 #pragma once
 
 #include <vector>
-
+#include <Eigen/Geometry>
+#include <pinocchio/parsers/urdf.hpp>
+#include <pinocchio/algorithm/frames.hpp>
+#include <pinocchio/algorithm/joint-configuration.hpp>
 #include <pinocchio/algorithm/kinematics.hpp>
 #include <pinocchio/algorithm/jacobian.hpp>
-#include <pinocchio/algorithm/model.hpp>
-#include <pinocchio/algorithm/frames.hpp>
-#include <pinocchio/parsers/urdf.hpp>
 
 class pinocchio_wrapper
 {
@@ -17,78 +17,75 @@ public:
     Eigen::Quaterniond orientation;
   };
 
-  void init_pinocchio(const std::string &urdf_string, const std::string &end_effector, std::vector<std::string>& joints)
+  void init_pinocchio(const std::string &urdf_string, const std::string &end_effector)
   {
-    // Convert URDF to RBDyn
+    // Build model from URDF
     pinocchio::urdf::buildModelFromXML(urdf_string, model);
+    data = pinocchio::Data(model);
 
-    if(!model.existFrame(end_effector))
-    {
-      throw std::runtime_error("Index for end effector link " + end_effector + " not found in URDF. Aborting.");
-    }
-
-    // Find the index of the end effector in the model
-    ee_frame_id = model.getFrameId(end_effector);
-
-    // Identify the joints to be used for computation
-    _pinocchio_indices.clear();
-    for (int i = 0; i < model.njoints; ++i)
-    {
-      for(int j = 0; j < joints.size(); j++)
-      {
-        if(model.names[i] == joints[j])
-        {
-          _pinocchio_indices.push_back(i);
-        }
-      }
-    }
-      
+    // Get end-effector frame ID
+    _ef_frame_id = model.getFrameId(end_effector);
+    if (_ef_frame_id >= model.nframes)
+      throw std::runtime_error("Frame for end effector " + end_effector + " not found in URDF.");
   }
 
   Eigen::MatrixXd jacobian(const Eigen::VectorXd &q, const Eigen::VectorXd &dq)
   {
-    pinocchio::Data data(model);
+    pinocchio::Data local_data = data;
     
-    // Update the joint configuration
-    pinocchio::forwardKinematics(model, data, q, dq);
-
-    // Compute the Jacobian for the end effector
-    Eigen::MatrixXd jac(n_joints(),model.nv);
-    pinocchio::computeFrameJacobian(model, data, q, ee_frame_id, jac);
-    return jac;
+    pinocchio::forwardKinematics(model, local_data, q, dq);
+    pinocchio::computeJointJacobians(model, local_data, q);
+    pinocchio::computeJointJacobiansTimeVariation(model, local_data,q,dq);
+    pinocchio::updateFramePlacements(model, local_data);
+    
+    Eigen::MatrixXd J = pinocchio::getFrameJacobian(model, local_data, _ef_frame_id,pinocchio::LOCAL_WORLD_ALIGNED);
+    
+    return J.leftCols(7);
   }
 
   EefState perform_fk(const Eigen::VectorXd &q) const
   {
-    pinocchio::Data data(model);
-    
-    // Perform forward kinematics
-    pinocchio::forwardKinematics(model, data, q);
+    Eigen::VectorXd clamped_q = q;
+    for(int i = 0; i < model.nq; ++i)
+    {
+      double jt = q[i];
+      jt = wrap_angle(jt);
+      if(model.nq == model.lowerPositionLimit.size())
+        jt = std::clamp(jt, model.lowerPositionLimit[i], model.upperPositionLimit[i]);
+      clamped_q[i] = jt;
+    }
 
-    // Get the transformation matrix of the end effector
-    const pinocchio::SE3 &transformation = data.oMi[ee_frame_id];
-    Eigen::Matrix4d eig_tf = transformation.toHomogeneousMatrix();
-    
-    // Extract translation and rotation
-    Eigen::Vector3d trans = eig_tf.col(3).head(3);
-    Eigen::Matrix3d rot_mat = eig_tf.block(0, 0, 3, 3);
-    Eigen::Quaterniond quat(rot_mat);
+    pinocchio::Data local_data = data;
+    pinocchio::forwardKinematics(model, local_data, clamped_q);
+    pinocchio::updateFramePlacements(model, local_data);
 
-    return {trans, quat};
+    const pinocchio::SE3& tf = local_data.oMf[_ef_frame_id];
+    return {tf.translation(), Eigen::Quaterniond(tf.rotation()).normalized()};
   }
 
   uint32_t n_joints() const
   {
-    return (uint32_t)_pinocchio_indices.size();
+    return static_cast<uint32_t>(model.nq);
   }
 
   std::string root_link() const
   {
-    return model.frames[0].name;
+    for(const auto& frame : model.frames)
+      if(frame.type == pinocchio::BODY && frame.parent == 0)
+        return frame.name;
+    throw std::runtime_error("Root link not found");
   }
 
 private:
+  double wrap_angle(double angle) const
+  {
+    if(angle <= M_PI && angle >= -M_PI) return angle;
+    return angle < 0.0 
+      ? std::fmod(angle - M_PI, 2*M_PI) + M_PI
+      : std::fmod(angle + M_PI, 2*M_PI) - M_PI;
+  }
+
   pinocchio::Model model;
-  std::vector<size_t> _pinocchio_indices;
-  pinocchio::FrameIndex ee_frame_id;
+  mutable pinocchio::Data data;
+  pinocchio::FrameIndex _ef_frame_id;
 };

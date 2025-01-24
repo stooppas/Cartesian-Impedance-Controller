@@ -9,6 +9,8 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "(GNU|Clang)")
   add_compile_options(-Wall -Wextra -Wconversion)
 endif()
 
+add_compile_options(-O3 -march=native -DNDEBUG -DEIGEN_NO_DEBUG)
+
 set(THIS_PACKAGE_INCLUDE_DEPENDS
   rsl
   rclcpp_components

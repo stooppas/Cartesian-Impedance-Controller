@@ -32,19 +32,19 @@ cartesian_impedance_controller:
   filtering: {
     nullspace_config: {
       type: double,
-      default_value: 0.1,
+      default_value: 1.0,
     },
     stiffness: {
       type: double,
-      default_value: 0.1,
+      default_value: 1.0,
     },
     pose: {
       type: double,
-      default_value: 0.1,
+      default_value: 1.0,
     },
     wrench: {
       type: double,
-      default_value: 0.1,
+      default_value: 1.0,
     }
   }
   verbosity: {
@@ -130,7 +130,7 @@ cartesian_impedance_controller:
         default_value: 200,
         description: "translational stiffness in x direction",
         validation: {
-          bounds<>: [0, 4000]
+          bounds<>: [0, 1500]
         }
       },
       y: {
@@ -138,7 +138,7 @@ cartesian_impedance_controller:
         default_value: 200,
         description: "translational stiffness in y direction",
         validation: {
-          bounds<>: [0, 4000]
+          bounds<>: [0, 1500]
         }
       },
       z: {
@@ -146,7 +146,7 @@ cartesian_impedance_controller:
         default_value: 200,
         description: "translational stiffness in z direction",
         validation: {
-          bounds<>: [0, 4000]
+          bounds<>: [0, 1500]
         }
       },
     },
@@ -156,7 +156,7 @@ cartesian_impedance_controller:
         default_value: 20,
         description: "rotational stiffness in x direction",
         validation: {
-          bounds<>: [0, 300]
+          bounds<>: [0, 100]
         }
       },
       y: {
@@ -164,7 +164,7 @@ cartesian_impedance_controller:
         default_value: 20,
         description: "rotational stiffness in y direction",
         validation: {
-          bounds<>: [0, 300]
+          bounds<>: [0, 100]
         }
       },
       z: {
@@ -172,7 +172,7 @@ cartesian_impedance_controller:
         default_value: 20,
         description: "rotational stiffness in z direction",
         validation: {
-          bounds<>: [0, 300]
+          bounds<>: [0, 100]
         }
       },
     },
@@ -181,7 +181,7 @@ cartesian_impedance_controller:
       default_value: 0,
       description: "nullspace stiffness",
       validation: {
-        bounds<>: [0, 50]
+        bounds<>: [0, 100]
       }
     }
   }
