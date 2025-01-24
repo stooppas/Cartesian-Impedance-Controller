@@ -343,6 +343,7 @@ controller_interface::CallbackReturn CartesianImpedanceControllerRos::on_error(
   {
     try
     {
+      this->pinocchio_wrapper_.init_pinocchio(urdf_string,params_.end_effector, params_.joints);
       this->rbdyn_wrapper_.init_rbdyn(urdf_string, params_.end_effector);
     }
     catch (std::runtime_error& e)
@@ -469,6 +470,9 @@ controller_interface::CallbackReturn CartesianImpedanceControllerRos::on_error(
     else
     {
       *jacobian = this->rbdyn_wrapper_.jacobian(q, dq);
+      std::cout << *jacobian << std::endl;
+      *jacobian = this->pinocchio_wrapper_.jacobian(q, dq);
+      std::cout << *jacobian << std::endl;
     }
     *jacobian = jacobian_perm_ * *jacobian;
     return true;

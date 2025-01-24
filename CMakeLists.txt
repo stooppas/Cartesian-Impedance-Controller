@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 3.8)
 project(cartesian_impedance_controller)
 
 if(NOT CMAKE_CXX_STANDARD)
@@ -20,6 +20,7 @@ set(THIS_PACKAGE_INCLUDE_DEPENDS
   generate_parameter_library
   geometry2
   tf2_geometry_msgs
+  tf2_eigen
   geometry_msgs
   hardware_interface
   pluginlib
@@ -32,6 +33,9 @@ set(THIS_PACKAGE_INCLUDE_DEPENDS
   tf2_ros
   trajectory_msgs
   urdf
+  eigenpy
+  hpp-fcl
+  pinocchio
   Eigen3
   eigen3_cmake_module
 )
@@ -70,7 +74,7 @@ target_include_directories(${PROJECT_NAME}
   PUBLIC
   $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include/${PROJECT_NAME}>
-  #$<BUILD_INTERFACE:${CMAKE_BINARY_DIR}/>
+  $<BUILD_INTERFACE:${CMAKE_BINARY_DIR}/>
   ${Boost_INCLUDE_DIRS}
   ${Eigen3_INCLUDE_DIRS}
   ${SpaceVecAlg_INCLUDE_DIRS} 

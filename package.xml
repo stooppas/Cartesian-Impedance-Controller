@@ -22,11 +22,10 @@
   <depend>control_msgs</depend>
   <depend>controller_interface</depend>
   <depend>controller_manager</depend>
-  <depend>eigen3</depend>
+  <depend>tf2_eigen</depend>
   <depend>geometry2</depend>
   <depend>geometry_msgs</depend>
   <depend>hardware_interface</depend>
-  <depend>message_generation</depend>
   <depend>realtime_tools</depend>
   <depend>rclcpp</depend>
   <depend>sensor_msgs</depend>
@@ -36,6 +35,7 @@
   <depend>trajectory_msgs</depend>
   <depend>generate_parameter_library</depend>
   <depend>pluginlib</depend>
+  <depend>pinocchio</depend>
 
   <member_of_group>rosidl_interface_packages</member_of_group>
 
